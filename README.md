@@ -48,12 +48,34 @@ Struktur proyek ini dirancang untuk memisahkan kode aplikasi dari file-file lain
 
 ### 🧠 Model & API
 
-#### Detail Model Machine Learning
-Model ini adalah sebuah `LGBMClassifier` yang dioptimalkan menggunakan `GridSearchCV`. Prosesnya adalah sebagai berikut:
-1.  **Preprocessing**: Variabel target asli yang memiliki 7 kelas penggunaan diubah menjadi 2 kelas biner: `User` (pernah menggunakan) dan `Non-user` (tidak pernah menggunakan). Fitur numerik distandarisasi menggunakan `StandardScaler`.
-2.  **Pipeline**: Seluruh langkah *preprocessing* dan pemodelan digabungkan ke dalam sebuah `Pipeline` Scikit-learn untuk mencegah kebocoran data.
-3.  **Evaluasi**: Model terbaik dievaluasi pada data uji dan mencapai **weighted F1-Score sebesar 0.78**.
-4.  **Fitur Penting**: Analisis menunjukkan bahwa skor kepribadian seperti `nscore` (neuroticism), `cscore` (conscientiousness), dan `ascore` (agreeableness) adalah prediktor yang paling berpengaruh.
+
+### Alur Pembangunan Model (Model Development Workflow)
+Model prediksi ini dibangun melalui serangkaian proses yang sistematis untuk memastikan hasil yang robust dan dapat direproduksi.
+
+**1. Preprocessing dan Transformasi Data**
+Langkah awal adalah mempersiapkan data agar siap untuk pemodelan.
+* **Target Binarization**: Variabel target asli, `cannabis`, memiliki 7 level penggunaan (dari CL0 hingga CL6). Untuk menyederhanakan masalah menjadi klasifikasi biner, kelas-kelas ini dikelompokkan menjadi dua: **'Non-user'** (untuk kelas CL0 dan CL1) dan **'User'** (untuk kelas CL2 hingga CL6).
+* **Feature Scaling**: Semua fitur input yang bersifat numerik (skor kepribadian dan data demografis) distandarisasi menggunakan `StandardScaler`. Hal ini penting untuk memastikan semua fitur memiliki skala yang sama, yang dapat meningkatkan performa model seperti LightGBM.
+
+**2. Konstruksi Pipeline yang Robust**
+Untuk menjaga integritas data dan membuat alur kerja yang efisien, sebuah `Pipeline` dari Scikit-learn digunakan.
+* **Tujuan**: Pipeline ini menggabungkan langkah *feature scaling* (`StandardScaler`) dan pemodelan (`LGBMClassifier`) menjadi satu objek tunggal.
+* **Keunggulan**: Pendekatan ini secara efektif **mencegah kebocoran data (*data leakage*)** dari set pengujian ke set pelatihan dan memastikan bahwa proses yang sama diterapkan secara konsisten saat pelatihan dan prediksi.
+
+**3. Pencarian Hyperparameter (Hyperparameter Tuning)**
+Model `LGBMClassifier` dipilih karena performanya yang tinggi dan efisiensinya dalam memproses data. Untuk menemukan konfigurasi terbaik, `GridSearchCV` diterapkan.
+* **Proses**: `GridSearchCV` secara sistematis menguji berbagai kombinasi hyperparameter, menggunakan validasi silang 5-fold (*5-fold cross-validation*).
+* **Parameter yang Diuji**: Termasuk `n_estimators` (50, 100, 200), `learning_rate` (0.01, 0.1, 0.3), dan `max_depth` (3, 6, 9).
+* **Hasil Terbaik**: Kombinasi optimal yang ditemukan adalah `learning_rate: 0.3`, `max_depth: 3`, dan `n_estimators: 100`.
+
+**4. Evaluasi Performa Model**
+Performa model final dievaluasi pada data uji (20% dari total data) yang belum pernah dilihat sebelumnya.
+* **Metrik Utama**: **F1-Score (weighted)** dipilih sebagai metrik evaluasi utama karena memberikan gambaran yang seimbang antara presisi dan recall, terutama untuk data yang mungkin tidak seimbang.
+* **Hasil**: Model mencapai **weighted F1-Score 0.78** pada data uji. Secara spesifik, model menunjukkan performa yang baik dalam mengidentifikasi kelas 'User' (F1-score 0.82) dan kelas 'Non-user' (F1-score 0.68), yang menunjukkan kemampuannya dalam menangani kedua kasus.
+
+**5. Analisis Fitur Penting**
+Setelah model dilatih, analisis *feature importance* dilakukan untuk memahami faktor-faktor apa yang paling berpengaruh.
+* **Temuan**: Skor kepribadian, terutama **`nscore` (neuroticism), `cscore` (conscientiousness), dan `ascore` (agreeableness)**, ditemukan sebagai prediktor yang jauh lebih kuat dibandingkan dengan data demografis seperti usia atau jenis kelamin. Ini memberikan wawasan berharga mengenai profil psikologis yang terkait dengan penggunaan ganja.
 
 #### Detail Aplikasi Web
 Aplikasi ini dibangun menggunakan **FastAPI** dan melayani dua hal utama:
