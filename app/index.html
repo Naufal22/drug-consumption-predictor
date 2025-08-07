@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prediksi Konsumsi Ganja</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 text-gray-800 min-h-screen">
+  <div class="max-w-2xl mx-auto p-8">
+    <h1 class="text-3xl font-bold mb-6 text-center">Prediksi Konsumsi Ganja</h1>
+
+    <div class="bg-white p-6 rounded shadow">
+      <h3 class="font-semibold text-lg mb-2">Unggah file CSV (berisi data X untuk prediksi)</h3>
+      <p class="text-sm text-gray-500 mb-4">
+        File harus berupa <code>.csv</code> dengan kolom yang sesuai dengan fitur input model:<br>
+        <code>age, gender, education, country, ethnicity, nscore, escore, oscore, ascore, cscore, impuslive, ss</code>
+      </p>
+      <input type="file" id="csv-upload" accept=".csv" class="mb-4">
+      <button onclick="uploadCSV()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Upload dan Prediksi</button>
+    </div>
+
+    <div id="result" class="mt-6 p-4 bg-white rounded shadow hidden">
+      <h2 class="text-xl font-semibold mb-2">Hasil Prediksi:</h2>
+      <pre id="prediction-text" class="text-sm whitespace-pre-wrap"></pre>
+    </div>
+  </div>
+
+  <script>
+    async function uploadCSV() {
+      const fileInput = document.getElementById('csv-upload');
+      const file = fileInput.files[0];
+      if (!file) return alert("Pilih file CSV terlebih dahulu.");
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('http://localhost:8000/predict-batch', {
+        method: 'POST',
+        body: formData
+      });
+
+      const data = await res.json();
+      document.getElementById('result').classList.remove('hidden');
+
+      if (data.predictions) {
+        const rows = data.predictions.map((p, i) => `Baris ${i + 1}: ${p.prediction} (Prob: ${p.probability})`).join("\n");
+        document.getElementById('prediction-text').innerText = rows;
+      } else {
+        document.getElementById('prediction-text').innerText = 'Terjadi kesalahan saat memproses file.';
+      }
+    }
+  </script>
+</body>
+</html>
