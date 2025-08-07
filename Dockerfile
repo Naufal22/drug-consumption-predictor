@@ -1,8 +1,10 @@
 # Menggunakan image Python dasar yang ringan
-FROM python:3.9-slim
+FROM python:3.11-slim
 
 # Menetapkan direktori kerja di dalam container
 WORKDIR /code
+
+RUN apt-get update && apt-get install -y libgomp1 && rm -rf /var/lib/apt/lists/*
 
 # Menyalin file requirements terlebih dahulu untuk efisiensi caching
 COPY ./app/requirements.txt /code/requirements.txt
